@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>Block Blast 改良版</title>
+<title>Block Blast 完全修正</title>
 <style>
 body{
   background:#1e1e1e;
@@ -17,6 +17,7 @@ body{
   gap:4px;
   justify-content:center;
   margin:20px;
+  position:relative;
 }
 
 .cell{
@@ -40,6 +41,7 @@ body{
   display:grid;
   gap:4px;
   cursor:grab;
+  touch-action:none;
 }
 
 .block{
@@ -48,49 +50,45 @@ body{
   background:#4cafef;
   border-radius:6px;
 }
+.empty{
+  width:50px;
+  height:50px;
+}
 </style>
 </head>
 <body>
 
-<h2>Block Blast（ちゃんと遊べる版）</h2>
+<h2>Block Blast（完成版）</h2>
 <p>スコア: <span id="score">0</span></p>
 
 <div id="board"></div>
 <div id="pieces"></div>
 
 <script>
-const board = document.getElementById("board");
-const piecesDiv = document.getElementById("pieces");
-const scoreEl = document.getElementById("score");
+const SIZE=50, GAP=4, CELL=SIZE+GAP;
 
-let grid = Array(64).fill(0);
-let score = 0;
+let grid=Array(64).fill(0);
+let score=0;
 
-const SIZE = 50;
-const GAP = 4;
-const CELL = SIZE + GAP;
+const board=document.getElementById("board");
+const piecesDiv=document.getElementById("pieces");
+const scoreEl=document.getElementById("score");
 
-// 本家っぽい形
-const shapes = [
+// 形
+const shapes=[
  [[1]],
-
  [[1,1]],
  [[1],[1]],
-
  [[1,1,1]],
  [[1],[1],[1]],
-
  [[1,1],[1,1]],
-
  [[1,1,1],[1,1,1],[1,1,1]],
-
  [[1,0],[1,0],[1,1]],
  [[0,1],[0,1],[1,1]],
-
  [[1,1,1],[0,1,0]],
 ];
 
-// ボード
+// ボード生成
 for(let i=0;i<64;i++){
   const c=document.createElement("div");
   c.className="cell";
@@ -114,11 +112,11 @@ function generate(){
 
     piece.style.gridTemplateColumns=`repeat(${shape[0].length},${SIZE}px)`;
 
-    shape.forEach(r=>{
-      r.forEach(v=>{
-        const b=document.createElement("div");
-        if(v) b.className="block";
-        piece.appendChild(b);
+    shape.forEach(row=>{
+      row.forEach(v=>{
+        const d=document.createElement("div");
+        d.className = v ? "block" : "empty";
+        piece.appendChild(d);
       });
     });
 
@@ -132,10 +130,13 @@ function enableDrag(piece){
   piece.onpointerdown=e=>{
     piece.setPointerCapture(e.pointerId);
 
+    const offsetX = e.offsetX;
+    const offsetY = e.offsetY;
+
     const move=ev=>{
       piece.style.position="absolute";
-      piece.style.left=ev.pageX-25+"px";
-      piece.style.top=ev.pageY-25+"px";
+      piece.style.left=(ev.pageX-offsetX)+"px";
+      piece.style.top=(ev.pageY-offsetY)+"px";
     };
 
     const up=ev=>{
@@ -154,6 +155,8 @@ function enableDrag(piece){
       }
 
       piece.style.position="static";
+      piece.style.left="";
+      piece.style.top="";
       piece.removeEventListener("pointermove",move);
       piece.removeEventListener("pointerup",up);
     };
@@ -169,7 +172,7 @@ function place(shape,row,col){
     for(let c=0;c<shape[0].length;c++){
       if(shape[r][c]){
         let nr=row+r,nc=col+c;
-        if(nr>=8||nc>=8||grid[nr*8+nc]) return false;
+        if(nr<0||nc<0||nr>=8||nc>=8||grid[nr*8+nc]) return false;
       }
     }
   }
@@ -205,11 +208,6 @@ function checkClear(){
 
   if(cleared.size>0){
     score+=cleared.size*10;
-
-    if(cleared.size===64){
-      score+=200;
-      alert("全消し！+200");
-    }
   }
 
   cleared.forEach(i=>grid[i]=0);
