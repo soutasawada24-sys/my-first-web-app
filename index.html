@@ -2,13 +2,12 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>Block Blast 完全修正</title>
+<title>Block Blast（ドラッグ完成版）</title>
 <style>
 body{
   background:#1e1e1e;
   color:white;
   text-align:center;
-  font-family:sans-serif;
 }
 
 #board{
@@ -27,9 +26,8 @@ body{
   border-radius:6px;
 }
 
-.filled{
-  background:#4cafef;
-}
+.filled{ background:#4cafef; }
+.preview{ background:#88cfff; }
 
 #pieces{
   display:flex;
@@ -41,24 +39,23 @@ body{
   display:grid;
   gap:4px;
   cursor:grab;
-  touch-action:none;
+  position:relative;
+}
+
+.block, .empty{
+  width:50px;
+  height:50px;
 }
 
 .block{
-  width:50px;
-  height:50px;
   background:#4cafef;
   border-radius:6px;
-}
-.empty{
-  width:50px;
-  height:50px;
 }
 </style>
 </head>
 <body>
 
-<h2>Block Blast（完成版）</h2>
+<h2>Block Blast（ちゃんとドラッグできる版）</h2>
 <p>スコア: <span id="score">0</span></p>
 
 <div id="board"></div>
@@ -68,11 +65,11 @@ body{
 const SIZE=50, GAP=4, CELL=SIZE+GAP;
 
 let grid=Array(64).fill(0);
-let score=0;
+let dragging=null;
+let offsetX=0, offsetY=0;
 
 const board=document.getElementById("board");
 const piecesDiv=document.getElementById("pieces");
-const scoreEl=document.getElementById("score");
 
 // 形
 const shapes=[
@@ -97,7 +94,7 @@ for(let i=0;i<64;i++){
 
 function draw(){
   document.querySelectorAll(".cell").forEach((c,i)=>{
-    c.classList.toggle("filled",grid[i]);
+    c.className="cell"+(grid[i]?" filled":"");
   });
 }
 
@@ -110,115 +107,107 @@ function generate(){
     piece.className="piece";
     piece.shape=shape;
 
-    piece.style.gridTemplateColumns=`repeat(${shape[0].length},${SIZE}px)`;
+    piece.style.gridTemplateColumns=`repeat(${shape[0].length},50px)`;
 
-    shape.forEach(row=>{
-      row.forEach(v=>{
+    shape.forEach(r=>{
+      r.forEach(v=>{
         const d=document.createElement("div");
-        d.className = v ? "block" : "empty";
+        d.className=v?"block":"empty";
         piece.appendChild(d);
       });
     });
 
-    enableDrag(piece);
+    piece.onmousedown=e=>{
+      dragging=piece;
+      offsetX=e.offsetX;
+      offsetY=e.offsetY;
+    };
+
     piecesDiv.appendChild(piece);
   }
 }
 
 // ドラッグ
-function enableDrag(piece){
-  piece.onpointerdown=e=>{
-    piece.setPointerCapture(e.pointerId);
+document.onmousemove=e=>{
+  if(!dragging) return;
 
-    const offsetX = e.offsetX;
-    const offsetY = e.offsetY;
+  dragging.style.position="absolute";
+  dragging.style.left=(e.pageX-offsetX)+"px";
+  dragging.style.top=(e.pageY-offsetY)+"px";
 
-    const move=ev=>{
-      piece.style.position="absolute";
-      piece.style.left=(ev.pageX-offsetX)+"px";
-      piece.style.top=(ev.pageY-offsetY)+"px";
-    };
+  showPreview(e);
+};
 
-    const up=ev=>{
-      piece.releasePointerCapture(e.pointerId);
+document.onmouseup=e=>{
+  if(!dragging) return;
 
-      const rect=board.getBoundingClientRect();
-      const x=ev.clientX-rect.left;
-      const y=ev.clientY-rect.top;
+  placeFromEvent(e);
+  dragging.style.position="static";
+  dragging=null;
+  clearPreview();
+};
 
-      const col=Math.floor(x/CELL);
-      const row=Math.floor(y/CELL);
+// プレビュー
+function showPreview(e){
+  clearPreview();
 
-      if(place(piece.shape,row,col)){
-        piece.remove();
-        checkClear();
-      }
+  const rect=board.getBoundingClientRect();
+  const col=Math.floor((e.clientX-rect.left)/CELL);
+  const row=Math.floor((e.clientY-rect.top)/CELL);
 
-      piece.style.position="static";
-      piece.style.left="";
-      piece.style.top="";
-      piece.removeEventListener("pointermove",move);
-      piece.removeEventListener("pointerup",up);
-    };
-
-    piece.addEventListener("pointermove",move);
-    piece.addEventListener("pointerup",up);
-  };
-}
-
-// 配置
-function place(shape,row,col){
-  for(let r=0;r<shape.length;r++){
-    for(let c=0;c<shape[0].length;c++){
-      if(shape[r][c]){
-        let nr=row+r,nc=col+c;
-        if(nr<0||nc<0||nr>=8||nc>=8||grid[nr*8+nc]) return false;
-      }
-    }
-  }
+  const shape=dragging.shape;
 
   for(let r=0;r<shape.length;r++){
     for(let c=0;c<shape[0].length;c++){
       if(shape[r][c]){
         let nr=row+r,nc=col+c;
-        grid[nr*8+nc]=1;
+        if(nr<8&&nc<8){
+          let cell=board.children[nr*8+nc];
+          cell.classList.add("preview");
+        }
+      }
+    }
+  }
+}
+
+function clearPreview(){
+  document.querySelectorAll(".cell").forEach(c=>{
+    c.classList.remove("preview");
+  });
+}
+
+// 置く
+function placeFromEvent(e){
+  const rect=board.getBoundingClientRect();
+  const col=Math.floor((e.clientX-rect.left)/CELL);
+  const row=Math.floor((e.clientY-rect.top)/CELL);
+
+  const shape=dragging.shape;
+
+  // 判定
+  for(let r=0;r<shape.length;r++){
+    for(let c=0;c<shape[0].length;c++){
+      if(shape[r][c]){
+        let nr=row+r,nc=col+c;
+        if(nr>=8||nc>=8||grid[nr*8+nc]) return;
       }
     }
   }
 
-  draw();
-  return true;
-}
-
-// 消去
-function checkClear(){
-  let cleared=new Set();
-
-  for(let r=0;r<8;r++){
-    if([...Array(8)].every((_,c)=>grid[r*8+c])){
-      for(let c=0;c<8;c++) cleared.add(r*8+c);
+  // 置く
+  for(let r=0;r<shape.length;r++){
+    for(let c=0;c<shape[0].length;c++){
+      if(shape[r][c]){
+        grid[(row+r)*8+(col+c)]=1;
+      }
     }
   }
 
-  for(let c=0;c<8;c++){
-    if([...Array(8)].every((_,r)=>grid[r*8+c])){
-      for(let r=0;r<8;r++) cleared.add(r*8+c);
-    }
-  }
-
-  if(cleared.size>0){
-    score+=cleared.size*10;
-  }
-
-  cleared.forEach(i=>grid[i]=0);
+  dragging.remove();
   draw();
-  scoreEl.textContent=score;
-
-  if(piecesDiv.children.length===0){
-    generate();
-  }
 }
 
+// 初期化
 generate();
 draw();
 </script>
