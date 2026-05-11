@@ -2,143 +2,32 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <style>
-        body {
-            margin: 0;
-            background-color: #050505;
-            color: white;
-            font-family: sans-serif;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            perspective: 1000px; /* 3Dの奥行き */
-        }
-
-        /* 画面を動かすための隠しチェックボックス */
-        #move-trigger { display: none; }
-
-        /* メインの3D空間 */
-        .stage {
-            width: 100vw;
-            height: 100vh;
-            transform-style: preserve-3d;
-            transition: transform 2s ease-in-out;
-            position: relative;
-        }
-
-        /* 地面（不気味なグリッド） */
-        .floor {
-            position: absolute;
-            width: 5000px;
-            height: 5000px;
-            top: 50%;
-            left: 50%;
-            margin-left: -2500px;
-            background-image: 
-                linear-gradient(rgba(255,0,0,0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,0,0,0.1) 1px, transparent 1px);
-            background-size: 100px 100px;
-            transform: rotateX(90deg) translateZ(-100px);
-        }
-
-        /* 鬼（めちゃくちゃ怖い顔に見立てた四角） */
-        .oni {
-            position: absolute;
-            bottom: 20%;
-            left: 50%;
-            width: 200px;
-            height: 300px;
-            background: linear-gradient(to bottom, #800, #200);
-            transform: translateX(-50%) translateZ(-1500px); /* 最初は遠くにいる */
-            border: 5px solid red;
-            box-shadow: 0 0 50px red;
-            transition: transform 5s cubic-bezier(0.6, 0, 0.4, 1);
-        }
-
-        /* 鬼の目 */
-        .oni::before, .oni::after {
-            content: "👁️";
-            position: absolute;
-            top: 50px;
-            font-size: 50px;
-        }
-        .oni::before { left: 30px; }
-        .oni::after { right: 30px; }
-
-        /* ボタン（逃げるアクション） */
-        .run-btn {
-            position: absolute;
-            bottom: 50px;
-            padding: 20px 40px;
-            background: red;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            z-index: 100;
-            border-radius: 10px;
-            user-select: none;
-            animation: pulse 1s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-
-        /* チェックボックスが入った時（ボタンを押した時）の動き */
-        #move-trigger:checked ~ .stage .oni {
-            /* 鬼が目の前に突進してくる！ */
-            transform: translateX(-50%) translateZ(200px);
-        }
-
-        #move-trigger:checked ~ .stage .floor {
-            /* 地面が後ろに流れることで走っている演出 */
-            background-position: 0 2000px;
-            transition: background-position 5s linear;
-        }
-
-        #move-trigger:checked ~ .run-btn {
-            display: none; /* 逃げたらボタンを消す */
-        }
-
-        /* ゲームオーバーの文字 */
-        .game-over {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 100px;
-            color: red;
-            opacity: 0;
-            pointer-events: none;
-            z-index: 200;
-        }
-
-        #move-trigger:checked ~ .game-over {
-            animation: showText 0.1s 4.8s forwards;
-        }
-
-        @keyframes showText {
-            to { opacity: 1; }
-        }
-
-    </style>
+    <title>3D 鬼ごっこ FPS</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <input type="checkbox" id="move-trigger">
-
-    <label for="move-trigger" class="run-btn">後ろを振り返る</label>
-
-    <div class="game-over">捕まった</div>
-
-    <div class="stage">
-        <div class="floor"></div>
-        <div class="oni"></div>
+    <div id="ui">
+        <p>画面クリックで開始 (WASDで移動 / マウスで視点)</p>
+        <div id="status">逃げろ！</div>
+    </div>
+    
+    <!-- 3D空間 -->
+    <div id="viewport">
+        <div id="camera">
+            <div id="world">
+                <!-- 地面 -->
+                <div class="floor"></div>
+                <!-- 鬼 -->
+                <div id="oni">
+                    <div class="oni-face">👁️ 👁️</div>
+                </div>
+                <!-- 壁（マップの例） -->
+                <div class="wall" style="transform: translate3d(500px, 0, -500px) rotateY(90deg);"></div>
+                <div class="wall" style="transform: translate3d(-500px, 0, -500px) rotateY(90deg);"></div>
+            </div>
+        </div>
     </div>
 
+    <script src="script.js"></script>
 </body>
 </html>
