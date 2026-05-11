@@ -1,35 +1,95 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>HTML 3D Racing</title>
-    <!-- A-Frameライブラリを読み込み（これ自体はJSですが、記述はHTMLベースになります） -->
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-  </head>
-  <body>
-    <a-scene>
-      <!-- 空 -->
-      <a-sky color="#87CEEB"></a-sky>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            margin: 0;
+            background-color: #87CEEB; /* 空の色 */
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            perspective: 800px; /* 3Dの奥行き感 */
+        }
 
-      <!-- 地面（サーキットの床） -->
-      <a-plane position="0 0 0" rotation="-90 0 0" width="100" height="100" color="#333"></a-plane>
+        /* 地面全体のコンテナ */
+        .world {
+            position: relative;
+            width: 2000px;
+            height: 2000px;
+            background-color: #228B22; /* 芝生 */
+            transform: rotateX(80deg); /* 傾けて地面にする */
+            transform-style: preserve-3d;
+        }
 
-      <!-- 車（簡易的に箱と円柱で表現） -->
-      <a-entity id="car" position="0 0.5 -5">
-        <!-- ボディ -->
-        <a-box width="2" height="1" depth="4" color="red"></a-box>
-        <!-- タイヤ -->
-        <a-cylinder position="-1.1 -0.2 1.5" rotation="0 0 90" radius="0.4" height="0.2" color="black"></a-cylinder>
-        <a-cylinder position="1.1 -0.2 1.5" rotation="0 0 90" radius="0.4" height="0.2" color="black"></a-cylinder>
-        <a-cylinder position="-1.1 -0.2 -1.5" rotation="0 0 90" radius="0.4" height="0.2" color="black"></a-cylinder>
-        <a-cylinder position="1.1 -0.2 -1.5" rotation="0 0 90" radius="0.4" height="0.2" color="black"></a-cylinder>
-      </a-entity>
+        /* 道路 */
+        .road {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 400px;
+            height: 100%;
+            background-color: #333;
+            transform: translateX(-50%);
+            overflow: hidden;
+        }
 
-      <!-- 障害物 -->
-      <a-box position="-5 1 -15" color="yellow"></a-box>
-      <a-box position="5 1 -25" color="yellow"></a-box>
+        /* 道路の中央線（アニメーションで動かす） */
+        .road::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: -100px;
+            width: 10px;
+            height: 200%;
+            border-left: 10px dashed white;
+            transform: translateX(-50%);
+            animation: moveRoad 1s linear infinite;
+        }
 
-      <!-- カメラ（プレイヤーの視点） -->
-      <a-entity camera look-controls wasd-controls position="0 2 0"></a-entity>
-    </a-scene>
-  </body>
+        @keyframes moveRoad {
+            from { transform: translateX(-50%) translateY(0); }
+            to { transform: translateX(-50%) translateY(100px); }
+        }
+
+        /* プレイヤーの車 */
+        .car {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            width: 80px;
+            height: 120px;
+            background-color: #ff0000;
+            transform: translateX(-50%) rotateX(-80deg); /* 地面に対して垂直に立たせる */
+            transform-origin: bottom;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        /* ライト */
+        .car::before, .car::after {
+            content: "";
+            position: absolute;
+            top: 5px;
+            width: 15px;
+            height: 10px;
+            background-color: #ffff00;
+        }
+        .car::before { left: 10px; }
+        .car::after { right: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="world">
+        <div class="road"></div>
+    </div>
+
+    <!-- 車は地面の外に配置してカメラの前に固定 -->
+    <div class="car"></div>
+
+</body>
 </html>
