@@ -1,0 +1,44 @@
+body { margin: 0; background: #000; color: white; overflow: hidden; font-family: sans-serif; }
+
+#ui {
+    position: absolute; top: 20px; left: 20px; z-index: 100;
+    pointer-events: none; text-shadow: 2px 2px #000;
+}
+
+#viewport {
+    width: 100vw; height: 100vh;
+    perspective: 800px; /* 視野角 */
+}
+
+#camera {
+    width: 100%; height: 100%;
+    transform-style: preserve-3d;
+}
+
+#world {
+    width: 100%; height: 100%;
+    transform-style: preserve-3d;
+}
+
+.floor {
+    position: absolute; width: 4000px; height: 4000px;
+    background: radial-gradient(circle, #222 1px, transparent 1px);
+    background-size: 50px 50px;
+    transform: translate(-50%, -50%) rotateX(90deg) translateZ(-50px);
+}
+
+#oni {
+    position: absolute; width: 100px; height: 200px;
+    background: #600; border: 2px solid red;
+    box-shadow: 0 0 30px red;
+    transform-style: preserve-3d;
+}
+
+.oni-face {
+    text-align: center; font-size: 40px; margin-top: 20px;
+}
+
+.wall {
+    position: absolute; width: 1000px; height: 500px;
+    background: #111; border: 2px solid #444;
+}
