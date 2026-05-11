@@ -1,216 +1,35 @@
 <!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<title>Block Blast（ドラッグ完成版）</title>
-<style>
-body{
-  background:#1e1e1e;
-  color:white;
-  text-align:center;
-}
+<html>
+  <head>
+    <title>HTML 3D Racing</title>
+    <!-- A-Frameライブラリを読み込み（これ自体はJSですが、記述はHTMLベースになります） -->
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  </head>
+  <body>
+    <a-scene>
+      <!-- 空 -->
+      <a-sky color="#87CEEB"></a-sky>
 
-#board{
-  display:grid;
-  grid-template-columns:repeat(8,50px);
-  gap:4px;
-  justify-content:center;
-  margin:20px;
-  position:relative;
-}
+      <!-- 地面（サーキットの床） -->
+      <a-plane position="0 0 0" rotation="-90 0 0" width="100" height="100" color="#333"></a-plane>
 
-.cell{
-  width:50px;
-  height:50px;
-  background:#333;
-  border-radius:6px;
-}
+      <!-- 車（簡易的に箱と円柱で表現） -->
+      <a-entity id="car" position="0 0.5 -5">
+        <!-- ボディ -->
+        <a-box width="2" height="1" depth="4" color="red"></a-box>
+        <!-- タイヤ -->
+        <a-cylinder position="-1.1 -0.2 1.5" rotation="0 0 90" radius="0.4" height="0.2" color="black"></a-cylinder>
+        <a-cylinder position="1.1 -0.2 1.5" rotation="0 0 90" radius="0.4" height="0.2" color="black"></a-cylinder>
+        <a-cylinder position="-1.1 -0.2 -1.5" rotation="0 0 90" radius="0.4" height="0.2" color="black"></a-cylinder>
+        <a-cylinder position="1.1 -0.2 -1.5" rotation="0 0 90" radius="0.4" height="0.2" color="black"></a-cylinder>
+      </a-entity>
 
-.filled{ background:#4cafef; }
-.preview{ background:#88cfff; }
+      <!-- 障害物 -->
+      <a-box position="-5 1 -15" color="yellow"></a-box>
+      <a-box position="5 1 -25" color="yellow"></a-box>
 
-#pieces{
-  display:flex;
-  justify-content:center;
-  gap:20px;
-}
-
-.piece{
-  display:grid;
-  gap:4px;
-  cursor:grab;
-  position:relative;
-}
-
-.block, .empty{
-  width:50px;
-  height:50px;
-}
-
-.block{
-  background:#4cafef;
-  border-radius:6px;
-}
-</style>
-</head>
-<body>
-
-<h2>Block Blast（ちゃんとドラッグできる版）</h2>
-<p>スコア: <span id="score">0</span></p>
-
-<div id="board"></div>
-<div id="pieces"></div>
-
-<script>
-const SIZE=50, GAP=4, CELL=SIZE+GAP;
-
-let grid=Array(64).fill(0);
-let dragging=null;
-let offsetX=0, offsetY=0;
-
-const board=document.getElementById("board");
-const piecesDiv=document.getElementById("pieces");
-
-// 形
-const shapes=[
- [[1]],
- [[1,1]],
- [[1],[1]],
- [[1,1,1]],
- [[1],[1],[1]],
- [[1,1],[1,1]],
- [[1,1,1],[1,1,1],[1,1,1]],
- [[1,0],[1,0],[1,1]],
- [[0,1],[0,1],[1,1]],
- [[1,1,1],[0,1,0]],
-];
-
-// ボード生成
-for(let i=0;i<64;i++){
-  const c=document.createElement("div");
-  c.className="cell";
-  board.appendChild(c);
-}
-
-function draw(){
-  document.querySelectorAll(".cell").forEach((c,i)=>{
-    c.className="cell"+(grid[i]?" filled":"");
-  });
-}
-
-// ピース生成
-function generate(){
-  piecesDiv.innerHTML="";
-  for(let i=0;i<3;i++){
-    const shape=shapes[Math.floor(Math.random()*shapes.length)];
-    const piece=document.createElement("div");
-    piece.className="piece";
-    piece.shape=shape;
-
-    piece.style.gridTemplateColumns=`repeat(${shape[0].length},50px)`;
-
-    shape.forEach(r=>{
-      r.forEach(v=>{
-        const d=document.createElement("div");
-        d.className=v?"block":"empty";
-        piece.appendChild(d);
-      });
-    });
-
-    piece.onmousedown=e=>{
-      dragging=piece;
-      offsetX=e.offsetX;
-      offsetY=e.offsetY;
-    };
-
-    piecesDiv.appendChild(piece);
-  }
-}
-
-// ドラッグ
-document.onmousemove=e=>{
-  if(!dragging) return;
-
-  dragging.style.position="absolute";
-  dragging.style.left=(e.pageX-offsetX)+"px";
-  dragging.style.top=(e.pageY-offsetY)+"px";
-
-  showPreview(e);
-};
-
-document.onmouseup=e=>{
-  if(!dragging) return;
-
-  placeFromEvent(e);
-  dragging.style.position="static";
-  dragging=null;
-  clearPreview();
-};
-
-// プレビュー
-function showPreview(e){
-  clearPreview();
-
-  const rect=board.getBoundingClientRect();
-  const col=Math.floor((e.clientX-rect.left)/CELL);
-  const row=Math.floor((e.clientY-rect.top)/CELL);
-
-  const shape=dragging.shape;
-
-  for(let r=0;r<shape.length;r++){
-    for(let c=0;c<shape[0].length;c++){
-      if(shape[r][c]){
-        let nr=row+r,nc=col+c;
-        if(nr<8&&nc<8){
-          let cell=board.children[nr*8+nc];
-          cell.classList.add("preview");
-        }
-      }
-    }
-  }
-}
-
-function clearPreview(){
-  document.querySelectorAll(".cell").forEach(c=>{
-    c.classList.remove("preview");
-  });
-}
-
-// 置く
-function placeFromEvent(e){
-  const rect=board.getBoundingClientRect();
-  const col=Math.floor((e.clientX-rect.left)/CELL);
-  const row=Math.floor((e.clientY-rect.top)/CELL);
-
-  const shape=dragging.shape;
-
-  // 判定
-  for(let r=0;r<shape.length;r++){
-    for(let c=0;c<shape[0].length;c++){
-      if(shape[r][c]){
-        let nr=row+r,nc=col+c;
-        if(nr>=8||nc>=8||grid[nr*8+nc]) return;
-      }
-    }
-  }
-
-  // 置く
-  for(let r=0;r<shape.length;r++){
-    for(let c=0;c<shape[0].length;c++){
-      if(shape[r][c]){
-        grid[(row+r)*8+(col+c)]=1;
-      }
-    }
-  }
-
-  dragging.remove();
-  draw();
-}
-
-// 初期化
-generate();
-draw();
-</script>
-
-</body>
+      <!-- カメラ（プレイヤーの視点） -->
+      <a-entity camera look-controls wasd-controls position="0 2 0"></a-entity>
+    </a-scene>
+  </body>
 </html>
