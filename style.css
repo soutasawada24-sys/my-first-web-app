@@ -1,13 +1,15 @@
-body { margin: 0; background: #000; color: white; overflow: hidden; font-family: sans-serif; }
+body { margin: 0; background: #000; color: white; overflow: hidden; font-family: 'Courier New', Courier, monospace; }
 
 #ui {
     position: absolute; top: 20px; left: 20px; z-index: 100;
-    pointer-events: none; text-shadow: 2px 2px #000;
+    pointer-events: none;
 }
+
+#status { font-size: 24px; color: red; font-weight: bold; margin-bottom: 5px; }
 
 #viewport {
     width: 100vw; height: 100vh;
-    perspective: 800px; /* 視野角 */
+    perspective: 400px; /* 視野を少し狭くして恐怖感を演出 */
 }
 
 #camera {
@@ -21,24 +23,29 @@ body { margin: 0; background: #000; color: white; overflow: hidden; font-family:
 }
 
 .floor {
-    position: absolute; width: 4000px; height: 4000px;
-    background: radial-gradient(circle, #222 1px, transparent 1px);
-    background-size: 50px 50px;
+    position: absolute; width: 5000px; height: 5000px;
+    background: radial-gradient(circle, #111 20%, #050505 80%);
+    background-size: 100px 100px;
     transform: translate(-50%, -50%) rotateX(90deg) translateZ(-50px);
 }
 
+/* 鬼のデザイン */
 #oni {
-    position: absolute; width: 100px; height: 200px;
-    background: #600; border: 2px solid red;
-    box-shadow: 0 0 30px red;
+    position: absolute; width: 80px; height: 160px;
+    background: #400; border: 4px solid red;
+    box-shadow: 0 0 40px red;
     transform-style: preserve-3d;
 }
 
 .oni-face {
-    text-align: center; font-size: 40px; margin-top: 20px;
+    text-align: center; font-size: 60px; margin-top: 20px;
+    filter: drop-shadow(0 0 10px white);
 }
 
+/* 壁のデザイン */
 .wall {
-    position: absolute; width: 1000px; height: 500px;
-    background: #111; border: 2px solid #444;
+    position: absolute; width: 400px; height: 400px;
+    background: linear-gradient(to bottom, #111, #000);
+    border: 1px solid #333;
+    box-shadow: inset 0 0 50px #000;
 }
