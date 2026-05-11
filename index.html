@@ -2,28 +2,23 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>3D 鬼ごっこ FPS</title>
+    <title>3D Maze Horror - FPS</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="ui">
-        <p>画面クリックで開始 (WASDで移動 / マウスで視点)</p>
-        <div id="status">逃げろ！</div>
+        <div id="status">逃げろ！捕まるな。</div>
+        <p>クリックで開始 | WASDで移動 | マウスで視点</p>
     </div>
     
-    <!-- 3D空間 -->
     <div id="viewport">
         <div id="camera">
             <div id="world">
-                <!-- 地面 -->
                 <div class="floor"></div>
-                <!-- 鬼 -->
                 <div id="oni">
-                    <div class="oni-face">👁️ 👁️</div>
+                    <div class="oni-face">👁️</div>
                 </div>
-                <!-- 壁（マップの例） -->
-                <div class="wall" style="transform: translate3d(500px, 0, -500px) rotateY(90deg);"></div>
-                <div class="wall" style="transform: translate3d(-500px, 0, -500px) rotateY(90deg);"></div>
+                <div id="maze"></div>
             </div>
         </div>
     </div>
