@@ -2,27 +2,313 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>3D Maze Horror - FPS</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Code クエスト (Web版)</title>
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --editor-bg: #272822;
+            --text-color: #f8f8f2;
+            --accent-color: #4CAF50;
+            --error-color: #ff5555;
+            --output-bg: #151515;
+            --output-text: #00ff00;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        /* 上部：問題表示エリア */
+        #quest-area {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #stage-title {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 1.3rem;
+        }
+
+        #stage-desc {
+            margin: 0;
+            color: #666;
+            white-space: pre-line;
+            line-height: 1.5;
+        }
+
+        /* 中央：左右分割メインエリア */
+        #main-container {
+            display: flex;
+            flex: 1;
+            gap: 15px;
+            min-height: 0; /* 子要素のスクロールを有効にするため */
+        }
+
+        .panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .panel-title {
+            margin: 0 0 10px 0;
+            font-size: 1rem;
+            color: #555;
+            font-weight: bold;
+        }
+
+        /* 左側：エディタ */
+        #editor {
+            flex: 1;
+            background-color: var(--editor-bg);
+            color: var(--text-color);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            resize: none;
+            outline: none;
+        }
+
+        /* 右側：出力画面 */
+        #output {
+            flex: 1;
+            background-color: var(--output-bg);
+            color: var(--output-text);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+            padding: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-y: auto;
+        }
+
+        .error-text {
+            color: var(--error-color);
+        }
+
+        /* 下部：コントロールエリア */
+        #control-area {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 15px;
+        }
+
+        #run-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        #run-btn:hover {
+            background-color: #45a049;
+        }
+
+        #run-btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+    </style>
 </head>
 <body>
-    <div id="ui">
-        <div id="status">逃げろ！捕まるな。</div>
-        <p>クリックで開始 | WASDで移動 | マウスで視点</p>
+
+    <!-- クエスト表示 -->
+    <div id="quest-area">
+        <h2 id="stage-title">読み込み中...</h2>
+        <p id="stage-desc"></p>
     </div>
-    
-    <div id="viewport">
-        <div id="camera">
-            <div id="world">
-                <div class="floor"></div>
-                <div id="oni">
-                    <div class="oni-face">👁️</div>
-                </div>
-                <div id="maze"></div>
-            </div>
+
+    <!-- メイン画面（左右分割） -->
+    <div id="main-container">
+        <!-- 左：エディタ -->
+        <div class="panel">
+            <div class="panel-title">【コード入力 (Python風)】</div>
+            <textarea id="editor" spellcheck="false"># ここにコードを書いてね&#10;print("Hello, World!")</textarea>
+        </div>
+        
+        <!-- 右：結果 -->
+        <div class="panel">
+            <div class="panel-title">【実行結果】</div>
+            <div id="output"></div>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- ボタン -->
+    <div id="control-area">
+        <button id="run-btn" onclick="runCode()">▶ コードを実行する</button>
+    </div>
+
+    <script>
+        // --- クエストデータ ---
+        const QUESTS = [
+            {
+                title: "ステージ 1: 世界への挨拶",
+                description: "画面に 'Hello, World!' と表示（print）させてください。\n既に左側に入力されているコードを実行してみましょう！",
+                expected: "Hello, World!"
+            },
+            {
+                title: "ステージ 2: 簡単な計算",
+                description: "5 足す 3 の計算結果を表示させてください。\nヒント: print(5 + 3)",
+                expected: "8"
+            },
+            {
+                title: "ステージ 3: 変数を使ってみよう",
+                description: "変数 x に 10 を代入し、それを print で表示させてください。\nヒント:\nx = 10\nprint(x)",
+                expected: "10"
+            }
+        ];
+
+        let currentStage = 0;
+
+        // 初期化
+        function loadQuest() {
+            if (currentStage < QUESTS.length) {
+                const quest = QUESTS[currentStage];
+                document.getElementById("stage-title").innerText = quest.title;
+                document.getElementById("stage-desc").innerText = quest.description;
+            } else {
+                document.getElementById("stage-title").innerText = "🎉 全ステージクリア！";
+                document.getElementById("stage-desc").innerText = "素晴らしい！Pythonの基本出力をマスターしました！";
+                document.getElementById("run-btn").disabled = true;
+            }
+        }
+
+        // 簡易的なPython風インタプリタ（JavaScriptでのシミュレーション）
+        function simulatePython(code) {
+            let lines = code.split('\n');
+            let output = [];
+            let variables = {};
+
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+                
+                // 空行やコメントは無視
+                if (line === "" || line.startsWith("#")) continue;
+
+                try {
+                    // 1. print文の解析
+                    if (line.startsWith("print(") && line.endsWith(")")) {
+                        let content = line.substring(6, line.length - 1).trim();
+                        
+                        // 文字列のパース (クォーテーションの除去)
+                        if ((content.startsWith('"') && content.endsWith('"')) || 
+                            (content.startsWith("'") && content.endsWith("'"))) {
+                            output.push(content.slice(1, -1));
+                        } 
+                        // 変数 or 数式のパース
+                        else {
+                            // 登録されている変数があれば置換
+                            let evalContent = content;
+                            for (let varName in variables) {
+                                // 安全に変数を置き換え
+                                let regex = new RegExp(`\\b${varName}\\b`, 'g');
+                                evalContent = evalContent.replace(regex, variables[varName]);
+                            }
+                            
+                            // JavaScriptのevalで安全に計算（簡易版のため）
+                            // 危険な文字が含まれていないか最低限のチェック
+                            if (/[^0-9+\-*/().\s]/.test(evalContent)) {
+                                throw new Error(`NameError: name '${content}' is not defined`);
+                            }
+                            let result = Function(`"use strict"; return (${evalContent})`)();
+                            output.push(result.toString());
+                        }
+                    } 
+                    // 2. 変数代入の解析 (例: x = 10)
+                    else if (line.includes("=")) {
+                        let parts = line.split("=");
+                        let varName = parts[0].trim();
+                        let varValue = parts[1].trim();
+
+                        // 変数名が英数字かチェック
+                        if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(varName)) {
+                            throw new Error(`SyntaxError: invalid syntax (variable name)`);
+                        }
+
+                        // 値の計算（代入側にも他の変数が使えるように）
+                        for (let v in variables) {
+                            let regex = new RegExp(`\\b${v}\\b`, 'g');
+                            varValue = varValue.replace(regex, variables[v]);
+                        }
+
+                        if (/[^0-9+\-*/().\s]/.test(varValue)) {
+                            throw new Error(`ValueError: 簡易インプリのため、代入は数値計算のみ対応しています`);
+                        }
+
+                        let result = Function(`"use strict"; return (${varValue})`)();
+                        variables[varName] = result;
+                    } 
+                    // 3. 対応していない構文
+                    else {
+                        throw new Error(`SyntaxError: 申し訳ありません。このゲームではまだサポートされていない構文です。`);
+                    }
+                } catch (e) {
+                    return { success: false, message: `行 ${i + 1}: ${e.message}` };
+                }
+            }
+
+            return { success: true, message: output.join('\n') };
+        }
+
+        // 実行ボタンが押されたとき
+        function runCode() {
+            const code = document.getElementById("editor").value;
+            const outputDiv = document.getElementById("output");
+            
+            // コード実行
+            const result = simulatePython(code);
+            
+            if (result.success) {
+                outputDiv.innerText = result.message;
+                outputDiv.classList.remove("error-text");
+                
+                // クリア判定（前後の余計な空白をトリムして比較）
+                let expected = QUESTS[currentStage].expected.trim();
+                let actual = result.message.trim();
+                
+                if (actual === expected) {
+                    setTimeout(() => {
+                        alert("✨ 正解です！クリア！ ✨");
+                        currentStage++;
+                        loadQuest();
+                        // ステージ2以降はエディタをクリア
+                        if (currentStage < QUESTS.length) {
+                            document.getElementById("editor").value = "# 次のコードを書いてね\n";
+                        }
+                    }, 100);
+                }
+            } else {
+                outputDiv.innerText = result.message;
+                outputDiv.classList.add("error-text");
+            }
+        }
+
+        // 最初の問題をロード
+        window.onload = loadQuest;
+    </script>
 </body>
 </html>
